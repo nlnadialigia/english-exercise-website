@@ -1,24 +1,26 @@
-# English Exercise Website - Documentação Completa
+# English Exercise Platform - Application Overview
 
-## Visão Geral
+## Overview
 
-Sistema web completo para criação e resolução de exercícios de inglês, desenvolvido em Next.js 14 com App Router, TypeScript, Tailwind CSS e Drizzle ORM. O sistema permite criar **Cadernos de Exercícios** contendo múltiplos exercícios de diferentes tipos, com correção automática, histórico de tentativas e acompanhamento de progresso.
+Complete web system for creating and solving English exercises, built with Next.js 16, TypeScript, Tailwind CSS, and Prisma ORM. The system allows creating **Exercise Books** containing multiple exercises of different types, with automatic correction, attempt history, and progress tracking.
 
-## Arquitetura
+## Architecture
 
-### Stack Tecnológica
-- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
+### Technology Stack
+- **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes, Server Actions
-- **Banco de Dados**: PostgreSQL com Drizzle ORM
+- **Database**: PostgreSQL with Prisma ORM
 - **UI Components**: shadcn/ui (Button, Card, Input, RadioGroup, Badge, etc.)
-- **Tabelas**: AG Grid (v35+)
-- **Validação**: Zod
-- **Autenticação**: Session-based com cookies
-- **Notificações**: Sonner (toast notifications)
+- **Tables**: AG Grid (v35+)
+- **Validation**: Zod
+- **Authentication**: Session-based with cookies
+- **Notifications**: Sonner (toast notifications)
+- **PDF**: @react-pdf/renderer
+- **Email**: MailerSend
 
-## Estrutura do Banco de Dados
+## Database Structure
 
-### Tabela `users`
+### `users` Table
 ```sql
 - id: UUID (PK)
 - email: TEXT (UNIQUE)
@@ -26,324 +28,277 @@ Sistema web completo para criação e resolução de exercícios de inglês, des
 - fullName: TEXT
 - role: TEXT ('admin' | 'teacher' | 'student')
 - level: TEXT (A1, A2, B1, etc.)
-- isGeneral: BOOLEAN (true = Particular, false = Bela Lira)
+- isGeneral: BOOLEAN (true = Private, false = Bela Lira)
 - status: TEXT ('active' | 'inactive')
-- teacherId: UUID (FK -> users.id) -- Vinculação professor-aluno
+- teacherId: UUID (FK -> users.id) -- Teacher-student link
 - createdAt: TIMESTAMP
 - updatedAt: TIMESTAMP
 ```
 
-### Tabela `sessions`
+### `sessions` Table
 ```sql
 - id: UUID (PK)
 - userId: UUID (FK -> users.id)
 - expiresAt: TIMESTAMP
 ```
 
-### Tabela `exercises` (Cadernos de Exercícios)
+### `exercises` Table (Exercise Books)
 ```sql
 - id: UUID (PK)
 - teacherId: UUID (FK -> users.id)
-- title: TEXT (Nome do caderno)
+- title: TEXT (Book name)
 - description: TEXT
-- exercises: JSONB (Array de exercícios)
+- exercises: JSONB (Array of exercises)
 - difficulty: TEXT ('easy' | 'medium' | 'hard')
-- tags: JSONB (array de strings)
+- tags: JSONB (Array of tags)
 - role: TEXT ('teacher' | 'student')
-- level: TEXT
+- level: TEXT (A1, A2, B1, etc.)
 - isGeneral: BOOLEAN
 - isPublished: BOOLEAN
 - createdAt: TIMESTAMP
 - updatedAt: TIMESTAMP
 ```
 
-### Tabela `submissions` ⭐ **ATUALIZADA**
+### `submissions` Table
 ```sql
 - id: UUID (PK)
 - exerciseId: UUID (FK -> exercises.id)
 - studentId: UUID (FK -> users.id)
-- answers: JSONB (Respostas do aluno)
-- corrections: JSONB (Correções detalhadas)
-- score: INTEGER (Número de acertos)
+- answers: JSONB (Student answers)
+- corrections: JSONB (Correction results)
+- score: INTEGER (Correct answers)
 - totalQuestions: INTEGER
-- attempt: INTEGER (Número da tentativa)
+- attempt: INTEGER (Attempt number)
 - createdAt: TIMESTAMP
 ```
 
-## Sistema de Exercícios Completo ⭐ **NOVO**
+### `student_exercise_access` Table
+```sql
+- id: UUID (PK)
+- studentId: UUID (FK -> users.id)
+- exerciseId: UUID (FK -> exercises.id)
+- assignedBy: UUID (FK -> users.id)
+- assignedAt: TIMESTAMP
+- dueDate: TIMESTAMP (optional)
+- isActive: BOOLEAN
+```
 
-### Tipos de Exercícios Suportados
+## Exercise Types
 
-#### 1. Múltipla Escolha (`multiple_choice`)
-```json
+### 1. Multiple Choice
+```typescript
 {
-  "type": "multiple_choice",
-  "question": "What is the capital of Brazil?",
-  "options": ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador"],
-  "correctAnswer": "Brasília",
-  "explanation": "Brasília is the federal capital of Brazil."
+  type: "multiple_choice",
+  prompt: "Question text",
+  content: {
+    options: [
+      { id: "uuid", text: "Option A", correct: false },
+      { id: "uuid", text: "Option B", correct: true },
+      { id: "uuid", text: "Option C", correct: false }
+    ],
+    allowMultiple: false,
+    explanation: "Explanation text"
+  }
 }
 ```
 
-#### 2. Verdadeiro/Falso (`true_false`)
-```json
+### 2. Fill in the Blanks
+```typescript
 {
-  "type": "true_false",
-  "question": "The Earth is flat.",
-  "correctAnswer": "false",
-  "explanation": "The Earth is spherical, not flat."
+  type: "fill_blank",
+  prompt: "Complete the sentence",
+  content: {
+    text: "She {{verb}} studying English for {{time}}.",
+    blanks: {
+      "verb": ["is", "has been"],
+      "time": ["years", "months"]
+    },
+    caseSensitive: false
+  }
 }
 ```
 
-#### 3. Completar Lacunas (`fill_blank`)
-```json
+### 3. Import from Word
+```typescript
 {
-  "type": "fill_blank",
-  "question": "She _____ studying English for two years.",
-  "correctAnswer": "has been",
-  "explanation": "Present Perfect Continuous is used here."
+  type: "import_word",
+  prompt: "Imported exercises",
+  content: {
+    rawText: "Original text",
+    parsedExercises: [
+      // Array of multiple_choice or fill_blank exercises
+    ]
+  }
 }
 ```
 
-### Sistema de Correção Automática ⭐ **IMPLEMENTADO**
+## User Roles
 
-#### Processo de Correção
-1. **Recebimento das respostas** do aluno
-2. **Correção automática** por tipo de exercício:
-   - **Múltipla escolha**: Comparação exata
-   - **Verdadeiro/Falso**: Comparação exata
-   - **Completar lacunas**: Comparação case-insensitive
-3. **Geração de feedback detalhado** com explicações
-4. **Cálculo da nota** (acertos/total)
-5. **Salvamento no banco** com histórico preservado
+### Admin
+- Full platform access
+- Create and manage teachers and students
+- View all dashboards (read-only)
+- System configuration
 
-#### Estrutura da Correção
-```json
-{
-  "questionIndex": 0,
-  "question": "What is the capital of Brazil?",
-  "userAnswer": "São Paulo",
-  "isCorrect": false,
-  "correctAnswer": "Brasília",
-  "explanation": "Brasília is the federal capital of Brazil."
+### Teacher
+- Create and manage exercises
+- Add and manage students
+- View student submissions
+- Generate reports and PDFs
+- Send results via email
+- Assign exercises to students
+
+### Student
+- Solve assigned exercises
+- View results and corrections
+- Track progress
+- Multiple attempts per exercise
+- Access via magic link (no password required)
+
+## Key Features
+
+### Exercise Management
+- Create exercise books with multiple questions
+- Three question types: multiple choice, fill blanks, import from Word
+- Publish/unpublish exercises
+- Duplicate exercises
+- Edit exercises (only if no submissions)
+- Delete exercises (only if no submissions)
+
+### Student Management
+- Add students manually
+- Generate magic links for passwordless access
+- Assign exercises to specific students
+- Track student progress
+- View submission history
+
+### Automatic Correction
+- Instant feedback
+- Detailed explanations
+- Score calculation
+- Blank-by-blank correction for fill-in exercises
+- Multiple accepted answers support
+
+### Reports and Export
+- PDF generation with react-pdf
+- Email sending with MailerSend
+- Detailed submission reports
+- Progress tracking
+- Attempt history
+
+### Magic Link System
+- Passwordless authentication for students
+- Secure token-based access
+- Automatic session creation
+- Configurable expiration
+
+## Project Structure
+
+```
+├── app/
+│   ├── api/                    # API Routes
+│   │   ├── admin/             # Admin endpoints
+│   │   ├── exercises/         # Exercise CRUD
+│   │   ├── submissions/       # Submission handling
+│   │   ├── teacher/           # Teacher endpoints
+│   │   └── student/           # Student endpoints
+│   ├── dashboard/             # Dashboards
+│   │   ├── admin/            # Admin dashboard
+│   │   ├── teacher/          # Teacher dashboard
+│   │   └── student/          # Student dashboard
+│   └── login/                # Login page
+├── components/
+│   ├── exercises/            # Exercise components
+│   │   ├── editors/         # Exercise editors
+│   │   ├── ExerciseRenderer.tsx
+│   │   └── DetailedCorrection.tsx
+│   ├── pdf/                 # PDF templates
+│   ├── teacher/             # Teacher components
+│   └── ui/                  # Base UI components
+├── lib/
+│   ├── actions/             # Server actions
+│   ├── services/            # Business logic
+│   ├── types/               # TypeScript types
+│   └── utils/               # Utilities
+└── prisma/
+    ├── schema.prisma        # Database schema
+    └── migrations/          # Database migrations
+```
+
+## Authentication Flow
+
+1. User enters email and password
+2. System validates credentials
+3. Creates session with expiration
+4. Stores session in database
+5. Sets secure HTTP-only cookie
+6. Redirects to appropriate dashboard
+
+### Magic Link Flow (Students)
+1. Teacher generates magic link
+2. Link contains secure token
+3. Student clicks link
+4. System validates token
+5. Creates session automatically
+6. Redirects to student dashboard
+
+## Correction Algorithm
+
+### Multiple Choice
+```typescript
+const isCorrect = userAnswer === correctOption.id;
+```
+
+### Fill in the Blanks
+```typescript
+for (const [blankKey, acceptedAnswers] of Object.entries(blanks)) {
+  const userAnswer = userAnswers[blankKey];
+  const isCorrect = acceptedAnswers.some(accepted => 
+    caseSensitive 
+      ? accepted === userAnswer
+      : accepted.toLowerCase() === userAnswer.toLowerCase()
+  );
 }
 ```
 
-## Dashboards Completos ⭐ **FINALIZADOS**
+## Security
 
-### Dashboard do Administrador
-- **Gerenciamento de usuários** com AG Grid
-- **Cadastro de alunos** com vinculação obrigatória ao professor
-- **Estatísticas gerais** do sistema
-- **Controle de acesso** e permissões
+- Password hashing with bcryptjs
+- Session-based authentication
+- HTTP-only cookies
+- CSRF protection
+- Role-based access control
+- Secure token generation for magic links
+- SQL injection prevention (Prisma)
 
-### Dashboard do Professor ⭐ **ATUALIZADO**
-#### Aba "Meus Cadernos"
-- Lista de cadernos criados
-- Ações: Visualizar, Editar, Publicar/Despublicar, Excluir
-- Estatísticas: Total, Publicados, Submissões
+## Performance
 
-#### Aba "Meus Alunos" ⭐ **NOVO**
-- **Lista de alunos vinculados** ao professor
-- **Estatísticas por aluno**:
-  - Cadernos em aberto
-  - Cadernos realizados
-  - Média geral de notas
-- **Visualização detalhada** do progresso individual
-- **Acesso às correções** de cada tentativa
+- Server-side rendering (SSR)
+- Static generation where possible
+- Optimistic UI updates
+- React Query for caching
+- AG Grid for large datasets
+- Lazy loading of components
 
-#### Funcionalidades de Acompanhamento
-- **Histórico completo** de tentativas por aluno
-- **Melhor nota** destacada
-- **Número de tentativas** realizadas
-- **Link direto** para visualizar correções detalhadas
+## Best Practices
 
-### Dashboard do Aluno ⭐ **ATUALIZADO**
-#### Aba "Cadernos em Aberto"
-- Cadernos disponíveis para resolução
-- Filtrados por nível e tipo de aluno
-- Botão "Começar Agora"
+- TypeScript for type safety
+- Zod for runtime validation
+- Server actions for mutations
+- API routes for complex operations
+- Component composition
+- Separation of concerns
+- Error handling
+- Loading states
+- Toast notifications
 
-#### Aba "Cadernos Resolvidos"
-- Cadernos já completados
-- **Melhor nota** de cada caderno
-- **Número de tentativas** realizadas
-- Link para "Ver Resultado"
+## Future Enhancements
 
-#### Aba "Histórico" ⭐ **NOVO**
-- **Histórico completo** de todas as tentativas
-- **Visualização por caderno** com todas as tentativas
-- **Acesso individual** a cada resultado
-- **Comparação de performance** entre tentativas
-
-## Sistema de Múltiplas Tentativas ⭐ **IMPLEMENTADO**
-
-### Funcionalidades
-- **Tentativas ilimitadas** para cada caderno
-- **Histórico preservado** - tentativas anteriores nunca são sobrescritas
-- **Numeração sequencial** (#1, #2, #3...)
-- **Melhor nota destacada** nos dashboards
-- **Possibilidade de repetir** exercícios quantas vezes necessário
-
-### Fluxo de Repetição
-1. Aluno acessa caderno já resolvido
-2. Sistema cria nova tentativa (attempt + 1)
-3. Aluno resolve novamente
-4. Nova correção é salva separadamente
-5. Histórico completo fica disponível
-
-## Páginas de Resultados ⭐ **IMPLEMENTADAS**
-
-### Para Alunos (`/dashboard/student/results/[submissionId]`)
-- **Nota final** com percentual
-- **Status** (Aprovado/Reprovado - 70% de corte)
-- **Correção detalhada** questão por questão:
-  - Pergunta original
-  - Resposta do aluno
-  - Resposta correta (se errou)
-  - Explicação (quando disponível)
-- **Feedback visual** (verde/vermelho)
-- **Botão "Tentar Novamente"**
-
-### Para Professores (`/dashboard/teacher/submissions/[submissionId]`)
-- **Dados do aluno** (nome, email)
-- **Informações da tentativa** (número, data)
-- **Correção completa** com mesmo layout do aluno
-- **Link para perfil** do aluno
-- **Contexto educacional** para acompanhamento
-
-## Estrutura de Rotas Atualizada
-
-### Páginas Públicas
-- `/` - Landing page
-- `/login` - Página de login
-
-### Dashboard Admin
-- `/dashboard/admin` - Dashboard principal
-- Gerenciamento de usuários com vinculação professor-aluno
-
-### Dashboard Professor
-- `/dashboard/teacher` - Dashboard com abas (Cadernos/Alunos)
-- `/dashboard/teacher/exercises/new` - Criar caderno
-- `/dashboard/teacher/exercises/[id]` - Visualizar caderno
-- `/dashboard/teacher/exercises/[id]/edit` - Editar caderno
-- `/dashboard/teacher/students/[studentId]` - Detalhes do aluno ⭐ **NOVO**
-- `/dashboard/teacher/submissions/[submissionId]` - Revisar correção ⭐ **NOVO**
-
-### Dashboard Aluno
-- `/dashboard/student` - Dashboard com 3 abas (Aberto/Resolvidos/Histórico)
-- `/dashboard/student/exercises/[id]` - Resolver caderno ⭐ **ATUALIZADO**
-- `/dashboard/student/results/[submissionId]` - Ver resultado ⭐ **NOVO**
-
-### API Routes Atualizadas
-- `POST /api/submissions` - Submeter e corrigir exercício ⭐ **ATUALIZADO**
-- `GET /api/submissions/[submissionId]` - Buscar submissão específica ⭐ **NOVO**
-- `GET /api/teacher/students` - Listar alunos do professor ⭐ **NOVO**
-- `GET /api/teacher/students/[studentId]/exercises` - Exercícios do aluno ⭐ **NOVO**
-- `GET /api/teacher/submissions/[submissionId]` - Submissão para professor ⭐ **NOVO**
-
-## Regras de Negócio Atualizadas
-
-### Sistema de Vinculação Professor-Aluno ⭐ **IMPLEMENTADO**
-- **Cadastro obrigatório** de professor para alunos
-- **Visibilidade restrita**: Professor vê apenas seus alunos
-- **Acompanhamento individual** de progresso
-- **Relatórios personalizados** por professor
-
-### Sistema de Notas e Aprovação
-- **Nota mínima**: 70% para aprovação
-- **Cálculo**: (acertos / total) * 100
-- **Feedback visual**: Verde (aprovado) / Vermelho (reprovado)
-- **Histórico preservado**: Todas as tentativas salvas
-
-### Controle de Acesso aos Exercícios
-- **Alunos**: Veem apenas cadernos do seu nível/tipo
-- **Professores**: Veem correções apenas dos seus alunos
-- **Administradores**: Acesso total ao sistema
-
-## Componentes UI Implementados
-
-### Componentes Base
-- `Button` - Botões com variantes
-- `Card` - Cards para layout
-- `Input` - Campos de entrada
-- `RadioGroup` - Seleção única ⭐ **NOVO**
-- `Badge` - Badges de status ⭐ **NOVO**
-- `Tabs` - Navegação por abas
-
-### Componentes Específicos
-- `ExerciseClient` - Interface de resolução ⭐ **ATUALIZADO**
-- `ResultsClient` - Visualização de resultados ⭐ **NOVO**
-- `SubmissionReviewClient` - Revisão para professores ⭐ **NOVO**
-- `TeacherDashboardClient` - Dashboard com abas ⭐ **ATUALIZADO**
-
-## Fluxo Completo de Uso
-
-### 1. Criação de Exercícios (Professor)
-1. Professor cria caderno com múltiplos exercícios
-2. Define nível, dificuldade e público-alvo
-3. Adiciona exercícios de diferentes tipos
-4. Publica para disponibilizar aos alunos
-
-### 2. Resolução de Exercícios (Aluno)
-1. Aluno acessa dashboard e vê cadernos disponíveis
-2. Seleciona caderno compatível com seu perfil
-3. Resolve exercícios sequencialmente
-4. Submete respostas completas
-5. Recebe correção automática imediata
-6. Pode repetir quantas vezes quiser
-
-### 3. Acompanhamento (Professor)
-1. Professor acessa aba "Meus Alunos"
-2. Visualiza estatísticas de cada aluno
-3. Acessa detalhes individuais
-4. Revisa correções específicas
-5. Acompanha evolução ao longo do tempo
-
-## Funcionalidades Avançadas ⭐ **IMPLEMENTADAS**
-
-### Sistema de Histórico
-- **Preservação total** de todas as tentativas
-- **Comparação de performance** entre tentativas
-- **Evolução temporal** do aprendizado
-- **Dados para análise** pedagógica
-
-### Interface Responsiva
-- **Design adaptativo** para mobile/desktop
-- **Navegação intuitiva** com breadcrumbs
-- **Feedback visual** consistente
-- **Carregamento otimizado**
-
-### Tratamento de Erros
-- **Validação client-side** em tempo real
-- **Mensagens amigáveis** para usuários
-- **Logs detalhados** para desenvolvedores
-- **Recuperação automática** de sessões
-
-## Status Atual: 100% Funcional ✅
-
-### ✅ Funcionalidades Implementadas
-- [x] Sistema completo de exercícios (3 tipos)
-- [x] Correção automática detalhada
-- [x] Múltiplas tentativas com histórico
-- [x] Dashboards completos (Admin/Professor/Aluno)
-- [x] Vinculação professor-aluno
-- [x] Páginas de resultados detalhadas
-- [x] Sistema de notas e aprovação
-- [x] Interface responsiva e intuitiva
-- [x] APIs completas e documentadas
-- [x] Banco de dados otimizado
-
-### 🚀 Próximas Melhorias Sugeridas
-- [ ] Exercícios de áudio (listening)
-- [ ] Sistema de gamificação
-- [ ] Relatórios avançados em PDF
-- [ ] Notificações em tempo real
-- [ ] Modo offline (PWA)
-- [ ] Integração com LMS externos
-- [ ] Analytics avançados
-- [ ] Backup automático
-
-## Conclusão
-
-O sistema está **completamente funcional** e pronto para uso em produção. Todas as funcionalidades principais foram implementadas com foco na experiência do usuário, correção automática inteligente e acompanhamento pedagógico eficiente. A arquitetura permite fácil expansão e manutenção futuras.
+- Real-time collaboration
+- Audio/video exercises
+- Gamification
+- Analytics dashboard
+- Mobile app
+- AI-powered suggestions
+- Bulk operations
+- Advanced reporting
