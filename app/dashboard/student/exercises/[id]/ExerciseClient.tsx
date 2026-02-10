@@ -6,6 +6,7 @@ import { ExerciseRenderer } from "@/components/exercises/ExerciseRenderer";
 import { ScoringExplanation } from "@/components/exercises/ScoringExplanation";
 import { translations } from "@/lib/translations";
 import logger from "@/lib/logger";
+import { ExerciseItem, SubmissionAnswer, FillBlankContent } from "@/lib/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -17,7 +18,7 @@ interface Exercise {
   id: string;
   title: string;
   description: string;
-  exercises: any[];
+  exercises: ExerciseItem[];
 }
 
 export default function ExerciseClient({ exerciseId }: { exerciseId: string; }) {
@@ -25,7 +26,7 @@ export default function ExerciseClient({ exerciseId }: { exerciseId: string; }) 
   const queryClient = useQueryClient();
 
   const [exercise, setExercise] = useState<Exercise | null>(null);
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [answers, setAnswers] = useState<Record<string, SubmissionAnswer>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -56,7 +57,7 @@ export default function ExerciseClient({ exerciseId }: { exerciseId: string; }) 
     fetchExercise();
   }, [exerciseId, router]);
 
-  const handleAnswer = (questionIndex: number, answer: any) => {
+  const handleAnswer = (questionIndex: number, answer: SubmissionAnswer) => {
     const questionId = `q_${questionIndex}`;
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
   };
@@ -65,37 +66,36 @@ export default function ExerciseClient({ exerciseId }: { exerciseId: string; }) 
   const allQuestionsAnswered = exercise?.exercises.every((_, index) => {
     const questionId = `q_${index}`;
     const answer = answers[questionId];
+    const question = exercise.exercises[index];
     
-    // Para múltipla escolha, verificar se há uma resposta
-    if (exercise.exercises[index].type === "multiple_choice") {
-      return answer && answer.trim() !== "";
+    if (question.type === "multiple_choice") {
+      return typeof answer === 'string' && answer.trim() !== "";
     }
     
-    // Para fill_blank, verificar se todas as lacunas foram preenchidas
-    if (exercise.exercises[index].type === "fill_blank") {
-      if (!answer || typeof answer !== 'object') return false;
-      const blanks = exercise.exercises[index].content.blanks;
-      return Object.keys(blanks).every(blankKey => 
-        answer[blankKey] && answer[blankKey].trim() !== ""
-      );
+    if (question.type === "fill_blank") {
+      if (!answer || typeof answer !== 'object' || Array.isArray(answer)) return false;
+      const content = question.content as FillBlankContent;
+      const blanks = content.blanks;
+      return Object.keys(blanks).every(blankKey => {
+        const blankAnswer = (answer as Record<string, string>)[blankKey];
+        return blankAnswer && blankAnswer.trim() !== "";
+      });
     }
     
-    return answer && answer.trim() !== "";
+    return typeof answer === 'string' && answer.trim() !== "";
   }) || false;
 
   const handleSubmit = async () => {
     setSubmitting(true);
 
     try {
-      // Processar respostas para diferentes tipos de exercício
-      const processedAnswers: Record<string, any> = {};
+      const processedAnswers: Record<string, SubmissionAnswer> = {};
       
       exercise?.exercises.forEach((question, index) => {
         const questionId = `q_${index}`;
         const answer = answers[questionId];
         
         if (question.type === "fill_blank" && typeof answer === 'object') {
-          // Para fill_blank, converter objeto para JSON
           processedAnswers[questionId] = JSON.stringify(answer);
         } else {
           processedAnswers[questionId] = answer || "";
@@ -117,13 +117,13 @@ export default function ExerciseClient({ exerciseId }: { exerciseId: string; }) 
 
       toast.success(translations.exerciseCompleted);
 
-      // Invalidar queries relacionadas
       queryClient.invalidateQueries({ queryKey: ["teacher-submissions"] });
       queryClient.invalidateQueries({ queryKey: ["teacher-submissions-count"] });
 
       router.push(`/dashboard/student/results/${result.submissionId}`);
-    } catch (error: any) {
-      toast.error(error.message || "Error submitting exercise");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Error submitting exercise";
+      toast.error(errorMessage);
     } finally {
       setSubmitting(false);
     }

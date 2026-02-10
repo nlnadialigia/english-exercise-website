@@ -1,12 +1,13 @@
 import { ExerciseDifficulty, UserRole } from "@/generated";
 import prisma from "../db/prisma";
 import logger from "../logger";
+import { ExerciseItem, CorrectionResult, SubmissionAnswer } from "../types";
 
 export interface IExercise {
   teacherId: string;
   title: string;
-  description: string;
-  exercises: any[];
+  description?: string;
+  exercises: ExerciseItem[];
   difficulty: ExerciseDifficulty;
   tags: string[];
   role: UserRole;
@@ -17,8 +18,8 @@ export interface IExercise {
 export interface ISubmitExercise {
   exerciseId: string;
   studentId: string;
-  answers: any;
-  corrections: any[];
+  answers: Record<string, SubmissionAnswer>;
+  corrections: CorrectionResult[];
   score: number;
   totalQuestions: number;
 }

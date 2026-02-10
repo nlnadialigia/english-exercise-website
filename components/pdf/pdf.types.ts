@@ -1,3 +1,5 @@
+import { CorrectionResult, ExerciseItem } from "@/lib/types";
+
 export interface SubmissionPDFProps {
   submission: {
     student: {
@@ -6,22 +8,12 @@ export interface SubmissionPDFProps {
     };
     exercise: {
       title: string;
-      exercises: Array<{
-        prompt: string;
-        type: string;
-        content: any;
-      }>;
+      exercises: ExerciseItem[];
     };
     score: number;
     totalQuestions: number;
     attempt: number;
-    corrections: Array<{
-      question: string;
-      userAnswer: string;
-      correctAnswer?: string;
-      isCorrect: boolean;
-      explanation?: string;
-    }>;
+    corrections: CorrectionResult[];
     createdAt: string;
   };
 }

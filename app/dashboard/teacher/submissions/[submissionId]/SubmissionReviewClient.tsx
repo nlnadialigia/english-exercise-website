@@ -4,6 +4,7 @@ import { DetailedCorrection } from "@/components/exercises/DetailedCorrection";
 import { ScoringExplanation } from "@/components/exercises/ScoringExplanation";
 import { Button } from "@/components/ui/button";
 import { translations } from "@/lib/translations";
+import { CorrectionResult, ExerciseItem } from "@/lib/types";
 import { User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -15,7 +16,7 @@ interface SubmissionReview {
   score: number;
   totalQuestions: number;
   attempt: number;
-  corrections: any[];
+  corrections: CorrectionResult[];
   createdAt: string;
   student: {
     id: string;
@@ -26,7 +27,7 @@ interface SubmissionReview {
     id: string;
     title: string;
     description: string;
-    exercises: any[];
+    exercises: ExerciseItem[];
   };
 }
 

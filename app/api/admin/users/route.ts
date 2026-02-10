@@ -7,7 +7,8 @@ export async function GET() {
     const users = await UserService.getAllUsers();
     logger.database("Listando todos os usuários", { users });
     return NextResponse.json(users);
-  } catch (error: any) {
-    return NextResponse.json({ message: error.message }, { status: 500 });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Erro ao buscar usuários";
+    return NextResponse.json({ message: errorMessage }, { status: 500 });
   }
 }

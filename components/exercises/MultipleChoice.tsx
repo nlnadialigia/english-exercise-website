@@ -1,6 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ExerciseItem } from "@/lib/exercise-schema";
+import { ExerciseItem, MultipleChoiceContent } from "@/lib/types";
 import { useState } from "react";
 
 interface MultipleChoiceProps {
@@ -13,8 +13,7 @@ export function MultipleChoice({ exercise, onAnswer }: MultipleChoiceProps) {
 
   if (exercise.type !== "multiple_choice") return null;
 
-  // Type narrowing para garantir que temos o tipo correto
-  const content = exercise.content as { options: { id: string; text: string; correct: boolean; }[]; allowMultiple: boolean; explanation: string; };
+  const content = exercise.content as MultipleChoiceContent;
 
   const handleValueChange = (value: string) => {
     setSelectedValue(value);

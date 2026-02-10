@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Clock } from "lucide-react";
+import { SubmissionAnswer } from "@/lib/types";
 
 interface ExerciseResultProps {
   result: {
@@ -12,7 +13,7 @@ interface ExerciseResultProps {
     totalKeywords?: number;
     results?: Record<string, boolean>;
   };
-  userAnswer: any;
+  userAnswer: SubmissionAnswer;
 }
 
 export function ExerciseResult({ result, userAnswer }: ExerciseResultProps) {

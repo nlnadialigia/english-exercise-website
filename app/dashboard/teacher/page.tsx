@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { getTeacherExercises } from "@/lib/actions/exercises";
 import { getSession } from "@/lib/actions/session";
 import { getTotalSubmissions } from "@/lib/actions/submissions";
+import { ExerciseWithRelations } from "@/lib/types";
 import TeacherDashboardClient from "./TeacherDashboardClient";
 
 export default async function TeacherDashboard() {
@@ -12,9 +13,9 @@ export default async function TeacherDashboard() {
 
   return (
     <TeacherDashboardClient 
-      exercises={exercises} 
+      exercises={exercises as ExerciseWithRelations[]} 
       totalSubmissions={totalSubmissions}
-      publishedCount={exercises?.filter((ex: any) => ex.isPublished).length || 0}
+      publishedCount={exercises?.filter((ex) => ex.isPublished).length || 0}
       isAdmin={user?.role === "admin"}
     />
   );

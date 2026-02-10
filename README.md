@@ -1,71 +1,73 @@
 # English Exercise Platform
 
-Uma plataforma completa para criação, gerenciamento e resolução de exercícios de inglês, desenvolvida com Next.js, Prisma e PostgreSQL.
+A complete platform for creating, managing, and solving English exercises, built with Next.js, Prisma, and PostgreSQL.
 
-## 🚀 Funcionalidades
+> 🇧🇷 [Versão em Português](docs/pt-br/README.md)
 
-### Para Professores
-- **Gerenciamento de Exercícios**: Criar, editar, publicar e visualizar exercícios
-- **Tipos de Questões**: Múltipla escolha, verdadeiro/falso, completar lacunas
-- **Gerenciamento de Alunos**: Adicionar, editar e acompanhar progresso dos alunos
-- **Relatórios Detalhados**: Visualizar submissões e desempenho dos alunos
-- **Exportação PDF**: Gerar relatórios em PDF usando react-pdf
-- **Envio de Email**: Enviar resultados por email usando MailerSend
-- **Dashboard Completo**: Visão geral de exercícios, submissões e alunos
+## 🚀 Features
 
-### Para Alunos
-- **Resolução de Exercícios**: Interface intuitiva para responder exercícios
-- **History de Tentativas**: Acompanhar todas as tentativas realizadas
-- **Resultados Detalhados**: Ver correção completa com explicações
-- **Progresso**: Visualizar exercícios em aberto e concluídos
-- **Múltiplas Tentativas**: Possibilidade de refazer exercícios
+### For Teachers
+- **Exercise Management**: Create, edit, publish, and view exercises
+- **Question Types**: Multiple choice, true/false, fill in the blanks
+- **Student Management**: Add, edit, and track student progress
+- **Detailed Reports**: View submissions and student performance
+- **PDF Export**: Generate PDF reports using react-pdf
+- **Email Sending**: Send results via email using MailerSend
+- **Complete Dashboard**: Overview of exercises, submissions, and students
 
-### Para Administradores
-- **Gerenciamento de Usuários**: Criar e gerenciar professores e alunos
-- **Visão Geral**: Acesso a todos os dashboards em modo somente leitura
-- **Controle Total**: Gerenciar toda a plataforma
+### For Students
+- **Exercise Solving**: Intuitive interface to answer exercises
+- **Attempt History**: Track all attempts made
+- **Detailed Results**: View complete correction with explanations
+- **Progress**: View open and completed exercises
+- **Multiple Attempts**: Ability to redo exercises
 
-## 🛠️ Tecnologias Utilizadas
+### For Administrators
+- **User Management**: Create and manage teachers and students
+- **Overview**: Access to all dashboards in read-only mode
+- **Full Control**: Manage the entire platform
+
+## 🛠️ Technologies Used
 
 - **Frontend**: Next.js 16, React 19, TypeScript
 - **Backend**: Next.js API Routes
-- **Banco de Dados**: PostgreSQL com Prisma ORM
-- **Autenticação**: Sistema próprio com bcryptjs
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: Custom system with bcryptjs
 - **UI**: Tailwind CSS, Radix UI, Lucide Icons
-- **Tabelas**: AG Grid
+- **Tables**: AG Grid
 - **PDF**: @react-pdf/renderer
 - **Email**: MailerSend
-- **Formulários**: React Hook Form + Zod
+- **Forms**: React Hook Form + Zod
 
-## 📋 Pré-requisitos
+## 📋 Prerequisites
 
 - Node.js 18+ 
 - PostgreSQL 12+
-- npm ou yarn
+- npm or yarn
 
-## 🚀 Como Rodar o Projeto
+## 🚀 Getting Started
 
-### 1. Clone o repositório
+### 1. Clone the repository
 ```bash
-git clone <url-do-repositorio>
+git clone <repository-url>
 cd english-exercise-website
 ```
 
-### 2. Instale as dependências
+### 2. Install dependencies
 ```bash
 npm install
 ```
 
-### 3. Configure o banco de dados
+### 3. Configure the database
 
-#### Opção A: PostgreSQL Local
+#### Option A: Local PostgreSQL
 
-1. **Instale o PostgreSQL**
+1. **Install PostgreSQL**
    - **Ubuntu/Debian**: `sudo apt install postgresql postgresql-contrib`
    - **macOS**: `brew install postgresql`
-   - **Windows**: Baixe do [site oficial](https://www.postgresql.org/download/)
+   - **Windows**: Download from [official site](https://www.postgresql.org/download/)
 
-2. **Inicie o serviço PostgreSQL**
+2. **Start PostgreSQL service**
    ```bash
    # Ubuntu/Debian
    sudo systemctl start postgresql
@@ -74,25 +76,25 @@ npm install
    brew services start postgresql
    ```
 
-3. **Crie o banco de dados**
+3. **Create the database**
    ```bash
-   # Acesse o PostgreSQL
+   # Access PostgreSQL
    sudo -u postgres psql
    
-   # Crie o banco
+   # Create database
    CREATE DATABASE english_exercises;
    
-   # Crie um usuário (opcional)
+   # Create user (optional)
    CREATE USER english_user WITH PASSWORD 'password';
    GRANT ALL PRIVILEGES ON DATABASE english_exercises TO english_user;
    
-   # Saia do PostgreSQL
+   # Exit PostgreSQL
    \q
    ```
 
-#### Opção B: Docker (Recomendado)
+#### Option B: Docker (Recommended)
 ```bash
-# Criar e iniciar container PostgreSQL
+# Create and start PostgreSQL container
 docker run --name postgres-english \
   -e POSTGRES_DB=english_exercises \
   -e POSTGRES_USER=postgres \
@@ -100,119 +102,121 @@ docker run --name postgres-english \
   -p 5432:5432 \
   -d postgres:15
 
-# Verificar se está rodando
+# Check if running
 docker ps
 ```
 
-#### Opção C: Serviços em Nuvem
-- **Supabase**: Crie um projeto gratuito em [supabase.com](https://supabase.com)
-- **Railway**: Crie um banco PostgreSQL em [railway.app](https://railway.app)
-- **Neon**: Crie um banco serverless em [neon.tech](https://neon.tech)
+#### Option C: Cloud Services
+- **Supabase**: Create a free project at [supabase.com](https://supabase.com)
+- **Railway**: Create a PostgreSQL database at [railway.app](https://railway.app)
+- **Neon**: Create a serverless database at [neon.tech](https://neon.tech)
 
-### 4. Configure as variáveis de ambiente
+### 4. Configure environment variables
 ```bash
 cp .env.example .env
 ```
 
-Edite o arquivo `.env` com suas configurações.
+Edit the `.env` file with your settings.
 
-### 5. Execute as migrações do banco
+### 5. Run database migrations
 ```bash
 npm run migrate
 ```
 
-### 6. (Opcional) Execute o seed para dados iniciais
+### 6. (Optional) Run seed for initial data
 ```bash
 npm run seed
 ```
 
-### 7. Inicie o servidor de desenvolvimento
+### 7. Start development server
 ```bash
 npm run dev
 ```
 
-Acesse http://localhost:3000
+Access http://localhost:3000
 
-## 🗄️ Scripts Disponíveis
+## 🗄️ Available Scripts
 
-- `npm run dev` - Inicia o servidor de desenvolvimento
-- `npm run build` - Gera build de produção
-- `npm run start` - Inicia servidor de produção
-- `npm run migrate` - Executa migrações do Prisma
-- `npm run generate` - Gera cliente Prisma
-- `npm run studio` - Abre Prisma Studio
-- `npm run seed` - Executa seed do banco de dados
+- `npm run dev` - Start development server
+- `npm run build` - Generate production build
+- `npm run start` - Start production server
+- `npm run migrate` - Run Prisma migrations
+- `npm run generate` - Generate Prisma client
+- `npm run studio` - Open Prisma Studio
+- `npm run seed` - Run database seed
 
-## 🔧 Configuração do Banco de Dados
+## 🔧 Database Configuration
 
-### Estrutura Principal
+### Main Structure
 
-O banco possui as seguintes entidades principais:
+The database has the following main entities:
 
-- **Users**: Usuários (admin, teacher, student)
-- **Exercises**: Exercícios criados pelos professores
-- **Submissions**: Submissões/tentativas dos alunos
-- **TeacherStudent**: Relacionamento professor-aluno
+- **Users**: Users (admin, teacher, student)
+- **Exercises**: Exercises created by teachers
+- **Submissions**: Student submissions/attempts
+- **TeacherStudent**: Teacher-student relationship
 
-### Migrações
+### Migrations
 
-Para criar uma nova migração:
+To create a new migration:
 ```bash
-npx prisma migrate dev --name nome_da_migracao
+npx prisma migrate dev --name migration_name
 ```
 
-Para aplicar migrações em produção:
+To apply migrations in production:
 ```bash
 npm run deploy
 ```
-## 🔐 Autenticação
 
-O sistema possui três tipos de usuários:
+## 🔐 Authentication
 
-- **Admin**: Acesso total à plataforma
-- **Teacher**: Pode criar exercícios e gerenciar alunos
-- **Student**: Pode resolver exercícios
+The system has three types of users:
 
-### Usuários Padrão (após seed)
+- **Admin**: Full platform access
+- **Teacher**: Can create exercises and manage students
+- **Student**: Can solve exercises
+
+### Default Users (after seed)
 - Admin: admin@admin.com / admin
 
-## 📁 Estrutura do Projeto
+## 📁 Project Structure
 
 ```
-├── app/                    # App Router do Next.js
+├── app/                    # Next.js App Router
 │   ├── api/               # API Routes
-│   ├── dashboard/         # Dashboards por role
-│   └── login/             # Página de login
-├── components/            # Componentes React
-│   ├── ui/               # Componentes base (shadcn/ui)
-│   ├── emails/           # Templates de email
-│   ├── pdf/              # Templates de PDF
-│   └── teacher/          # Componentes específicos do professor
-├── lib/                   # Utilitários e configurações
-├── prisma/               # Schema e migrações do banco
-└── docs/                 # Documentação
+│   ├── dashboard/         # Dashboards by role
+│   └── login/             # Login page
+├── components/            # React Components
+│   ├── ui/               # Base components (shadcn/ui)
+│   ├── emails/           # Email templates
+│   ├── pdf/              # PDF templates
+│   └── teacher/          # Teacher-specific components
+├── lib/                   # Utilities and configurations
+├── prisma/               # Database schema and migrations
+└── docs/                 # Documentation
 ```
 
 ## 🚀 Deploy
 
-### Vercel (Recomendado)
-1. Conecte seu repositório ao Vercel
-2. Configure as variáveis de ambiente
-3. Configure um banco PostgreSQL (Supabase, Railway, etc.)
-4. Deploy automático
+### Vercel (Recommended)
+1. Connect your repository to Vercel
+2. Configure environment variables
+3. Set up a PostgreSQL database (Supabase, Railway, etc.)
+4. Automatic deployment
 
 ### Docker
 ```bash
-# Build da imagem
+# Build image
 docker build -t english-exercise-platform .
 
-# Executar
+# Run
 docker run -p 3000:3000 english-exercise-platform
 ```
-## 📚 Documentação Adicional
 
+## 📚 Additional Documentation
+
+- [Application Overview](docs/application-overview.md)
+- [Logger System](docs/logger-examples.md)
+- [Magic Link System](docs/magic-link-system.md)
 - [Prisma Documentation](https://www.prisma.io/docs/)
 - [Next.js Documentation](https://nextjs.org/docs)
-- [Documentação completa](docs/application-overview.md)
-- [Sistema de logs](docs/logger-examples.md)
-- [Link mágico](docs/magic-link-system.md)

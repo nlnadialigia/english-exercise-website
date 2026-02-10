@@ -1,0 +1,6 @@
+.env
+.env.prod
+.env.development
+node_modules
+.next
+rascunho

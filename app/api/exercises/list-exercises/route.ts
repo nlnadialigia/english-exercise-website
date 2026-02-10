@@ -1,4 +1,4 @@
-import { Exercise } from "@/generated";
+import { Exercise } from "@prisma/client";
 import { getSession } from "@/lib/actions/session";
 import logger from "@/lib/logger";
 import { ExerciseService } from "@/lib/services/exercise-service";

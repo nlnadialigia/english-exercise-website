@@ -15,10 +15,12 @@ export async function POST(req: Request) {
     await UserService.createUser(newUser);
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    if (error.message?.includes("duplicate key")) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+    
+    if (errorMessage.includes("duplicate key")) {
       return NextResponse.json({ message: "Email já cadastrado" }, { status: 400 });
     }
-    return NextResponse.json({ message: error.message || "Erro ao criar usuário" }, { status: 400 });
+    return NextResponse.json({ message: errorMessage || "Erro ao criar usuário" }, { status: 400 });
   }
 }

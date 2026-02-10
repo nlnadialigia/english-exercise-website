@@ -1,11 +1,12 @@
 import prisma from "../db/prisma";
 import logger from "../logger";
+import { CorrectionResult, SubmissionAnswer } from "../types";
 
 export interface ISubmission {
   exerciseId: string;
   studentId: string;
-  answers: any;
-  corrections: any[];
+  answers: Record<string, SubmissionAnswer>;
+  corrections: CorrectionResult[];
   score: number;
   totalQuestions: number;
   attempt?: number;

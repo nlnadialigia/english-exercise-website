@@ -84,7 +84,7 @@ export default function NewExerciseClient({ teacherId }: Props) {
         router.push("/dashboard/teacher");
         router.refresh();
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: translations.validationError,
         description: translations.multipleChoiceNeedsTwoOptions,

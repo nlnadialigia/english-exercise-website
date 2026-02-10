@@ -68,19 +68,18 @@ export default function SubmissionPDF({ submission }: SubmissionPDFProps) {
                 )}
               </Text>
 
-              {/* Exercícios de lacuna */}
               {originalQuestion?.type === "fill_blank" && (() => {
                 const userAnswers = typeof correction.userAnswer === 'string'
                   ? JSON.parse(correction.userAnswer || '{}')
-                  : correction.userAnswer;
+                  : correction.userAnswer as Record<string, string>;
 
                 const correctAnswers = typeof correction.correctAnswer === 'string'
                   ? JSON.parse(correction.correctAnswer || '{}')
-                  : correction.correctAnswer;
+                  : correction.correctAnswer as Record<string, string[]>;
 
-                return Object.entries(userAnswers).map(([key, userValue]: [string, any]) => {
+                return Object.entries(userAnswers).map(([key, userValue]) => {
                   const correctOptions = correctAnswers[key] || [];
-                  const caseSensitive = originalQuestion.content.caseSensitive || false;
+                  const caseSensitive = (originalQuestion.content as { caseSensitive?: boolean; }).caseSensitive || false;
 
                   const isBlankCorrect = correctOptions.some((acceptedAnswer: string) =>
                     caseSensitive
@@ -98,9 +97,8 @@ export default function SubmissionPDF({ submission }: SubmissionPDFProps) {
                 });
               })()}
 
-              {/* Exercícios de múltipla escolha */}
               {originalQuestion?.type === "multiple_choice" &&
-                originalQuestion.content.options.map((option: any, optIndex: number) => {
+                (originalQuestion.content as { options: Array<{ id: string; text: string; correct: boolean; }>; }).options.map((option, optIndex) => {
                   const isUserAnswer = option.id === correction.userAnswer;
                   const isCorrect = option.correct;
 

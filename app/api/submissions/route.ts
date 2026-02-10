@@ -3,12 +3,21 @@ import logger from "@/lib/logger";
 import { ExerciseService } from "@/lib/services/exercise-service";
 import { SubmissionService } from "@/lib/services/submission-service";
 import { NextResponse } from "next/server";
+import { ExerciseItem, MultipleChoiceContent, FillBlankContent, BlankResult, CorrectionResult } from "@/lib/types";
 
-function correctAnswer(question: any, userAnswer: string): { isCorrect: boolean; correctAnswer: string; explanation?: string; } {
+interface CorrectionResponse {
+  isCorrect: boolean;
+  correctAnswer: string;
+  explanation?: string;
+  blankResults?: BlankResult[];
+  score?: string;
+}
+
+function correctAnswer(question: ExerciseItem, userAnswer: string): CorrectionResponse {
   switch (question.type) {
-    case "multiple_choice":
-      const correctOption = question.content.options.find((opt: any) => opt.correct);
-      // Comparar por ID da opção, não pelo texto
+    case "multiple_choice": {
+      const content = question.content as MultipleChoiceContent;
+      const correctOption = content.options.find(opt => opt.correct);
       const isCorrect = userAnswer === correctOption?.id;
 
       logger.info("Checking multiple choice answer", "CORRECTION", {
@@ -16,31 +25,31 @@ function correctAnswer(question: any, userAnswer: string): { isCorrect: boolean;
         correctOptionId: correctOption?.id,
         correctOptionText: correctOption?.text,
         isCorrect,
-        allOptions: question.content.options
+        allOptions: content.options
       });
 
       return {
         isCorrect,
         correctAnswer: correctOption?.text || "",
-        explanation: question.content.explanation
+        explanation: content.explanation
       };
+    }
 
-    case "fill_blank":
-      // Para exercícios de lacuna, userAnswer é um objeto com as respostas de cada lacuna
-      const blanks = question.content.blanks;
+    case "fill_blank": {
+      const content = question.content as FillBlankContent;
+      const blanks = content.blanks;
       const userAnswers = typeof userAnswer === 'string' ? JSON.parse(userAnswer || '{}') : userAnswer;
-      const caseSensitive = question.content.caseSensitive || false;
+      const caseSensitive = content.caseSensitive || false;
       
       let correctCount = 0;
       let totalBlanks = 0;
-      const blankResults: any[] = [];
+      const blankResults: BlankResult[] = [];
       
-      // Verificar cada lacuna
       for (const [blankKey, possibleAnswers] of Object.entries(blanks)) {
         totalBlanks++;
         const userBlankAnswer = userAnswers[blankKey]?.trim() || '';
         
-        const isBlankCorrect = (possibleAnswers as string[]).some(acceptedAnswer => 
+        const isBlankCorrect = possibleAnswers.some(acceptedAnswer => 
           caseSensitive 
             ? acceptedAnswer === userBlankAnswer
             : acceptedAnswer.toLowerCase() === userBlankAnswer.toLowerCase()
@@ -56,23 +65,16 @@ function correctAnswer(question: any, userAnswer: string): { isCorrect: boolean;
         });
       }
       
-      // Questão está correta apenas se todas as lacunas estão corretas
       const allBlanksCorrect = correctCount === totalBlanks;
       
       return {
         isCorrect: allBlanksCorrect,
         correctAnswer: JSON.stringify(blanks),
-        explanation: question.content.explanation,
+        explanation: content.explanation,
         blankResults,
         score: `${correctCount}/${totalBlanks}`
       };
-
-    case "true_false":
-      return {
-        isCorrect: userAnswer === question.content.correctAnswer,
-        correctAnswer: question.content.correctAnswer || "",
-        explanation: question.content.explanation
-      };
+    }
 
     default:
       return { isCorrect: false, correctAnswer: "" };
@@ -100,7 +102,8 @@ export async function POST(request: Request) {
     const nextAttempt = existingSubmissions.length + 1;
 
     // Corrigir exercício
-    const corrections = exercise.exercises.map((question: any, index: number) => {
+    const exerciseItems = exercise.exercises as unknown as ExerciseItem[];
+    const corrections: CorrectionResult[] = exerciseItems.map((question, index) => {
       const questionId = `q_${index}`;
       const userAnswer = answers[questionId] || "";
       const correction = correctAnswer(question, userAnswer);
@@ -113,7 +116,6 @@ export async function POST(request: Request) {
         correctAnswer: correction.correctAnswer,
         explanation: correction.explanation,
         blankResults: correction.blankResults,
-        score: correction.score
       };
     });
 
@@ -123,13 +125,11 @@ export async function POST(request: Request) {
 
     corrections.forEach(correction => {
       if (correction.blankResults) {
-        // Para exercícios de lacuna, contar cada lacuna como uma questão
-        correction.blankResults.forEach((blankResult: any) => {
+        correction.blankResults.forEach((blankResult) => {
           if (blankResult.isCorrect) totalScore++;
           totalQuestions++;
         });
       } else {
-        // Para outros tipos, contar a questão inteira
         if (correction.isCorrect) totalScore++;
         totalQuestions++;
       }

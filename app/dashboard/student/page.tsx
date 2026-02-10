@@ -46,17 +46,14 @@ export default async function StudentDashboard() {
     );
   }
 
-  // Buscar histórico de submissões para exercícios completados
   const submissionsHistory = await SubmissionService.getStudentSubmissions(session.id);
 
-  // Agrupar submissões por exercício
   const submissionsByExercise = submissionsHistory.reduce((acc, sub) => {
     if (!acc[sub.exerciseId]) acc[sub.exerciseId] = [];
     acc[sub.exerciseId].push(sub);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, typeof submissionsHistory>);
 
-  // Ordenar submissões por data (mais recente primeiro)
   Object.keys(submissionsByExercise).forEach(exerciseId => {
     submissionsByExercise[exerciseId].sort((a, b) =>
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()

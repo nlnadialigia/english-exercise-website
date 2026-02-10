@@ -267,7 +267,7 @@ export default async function StudentDetailsPage({params}: Props) {
                           {submissions.length} {translations.attempt}{submissions.length > 1 ? 's' : ''}
                         </div>
                         <div className="space-y-2 max-h-32 overflow-y-auto">
-                          {submissions.map((sub: any, index: number) => (
+                          {submissions.map((sub, index) => (
                             <div key={sub.id} className="flex justify-between items-center p-2 bg-muted/50 rounded text-sm">
                               <span>{translations.attempt} #{sub.attempt}</span>
                               <div className="flex items-center gap-2">

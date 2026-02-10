@@ -6,18 +6,26 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { translations } from "@/lib/translations";
 import { CheckCircle } from "lucide-react";
+import { ExerciseItem, MultipleChoiceContent, FillBlankContent, ImportWordContent } from "@/lib/types";
+
+interface ExerciseWithExercises {
+  exercises: ExerciseItem[];
+  title: string;
+  description?: string;
+  difficulty: string;
+  tags: string[];
+}
 
 interface Props {
-  exercise: any;
+  exercise: ExerciseWithExercises;
 }
 
 export default function ExercisePreviewClient({ exercise }: Props) {
   const renderPreview = () => {
-    // Novo formato: caderno com múltiplos exercícios
     if (exercise.exercises && Array.isArray(exercise.exercises)) {
       return (
         <div className="space-y-6">
-          {exercise.exercises.map((subExercise: any, index: number) => (
+          {exercise.exercises.map((subExercise, index) => (
             <Card key={index} className="border-l-4 border-l-blue-500">
               <CardHeader>
                 <CardTitle className="text-base">{translations.exercise} {index + 1}</CardTitle>
@@ -34,17 +42,7 @@ export default function ExercisePreviewClient({ exercise }: Props) {
       );
     }
 
-    // Formato antigo (compatibilidade)
-    switch (exercise.type) {
-      case "multiple_choice":
-        return <MultipleChoicePreview exercise={exercise} />;
-      case "fill_blank":
-        return <FillBlankPreview exercise={exercise} />;
-      case "import_word":
-        return <ImportWordPreview exercise={exercise} />;
-      default:
-        return <div>Exercise type not supported</div>;
-    }
+    return <div>Exercise type not supported</div>;
   };
 
   return (
@@ -95,14 +93,15 @@ export default function ExercisePreviewClient({ exercise }: Props) {
   );
 }
 
-function MultipleChoicePreview({ exercise }: { exercise: any; }) {
-  const correctOption = exercise.content.options.find((opt: any) => opt.correct);
+function MultipleChoicePreview({ exercise }: { exercise: ExerciseItem; }) {
+  const content = exercise.content as MultipleChoiceContent;
+  const correctOption = content.options.find(opt => opt.correct);
 
   return (
     <div className="space-y-4">
       <p className="text-lg font-medium">{exercise.prompt}</p>
       <div className="space-y-2">
-        {exercise.content.options.map((option: any, index: number) => (
+        {content.options.map((option, index) => (
           <div
             key={option.id}
             className={`p-3 rounded border ${option.correct ? 'bg-green-50 border-green-200' : 'bg-gray-50'}`}
@@ -117,27 +116,28 @@ function MultipleChoicePreview({ exercise }: { exercise: any; }) {
           </div>
         ))}
       </div>
-      {exercise.content.explanation && (
+      {content.explanation && (
         <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
-          <strong>{translations.explanation}:</strong> {exercise.content.explanation}
+          <strong>{translations.explanation}:</strong> {content.explanation}
         </div>
       )}
     </div>
   );
 }
 
-function FillBlankPreview({ exercise }: { exercise: any; }) {
-  const parts = exercise.content.text.split(/{{(.*?)}}/g);
+function FillBlankPreview({ exercise }: { exercise: ExerciseItem; }) {
+  const content = exercise.content as FillBlankContent;
+  const parts = content.text.split(/{{(.*?)}}/g);
 
   return (
     <div className="space-y-4">
-      {exercise.prompt && exercise.prompt !== exercise.content.text && (
+      {exercise.prompt && exercise.prompt !== content.text && (
         <p className="text-lg font-medium">{exercise.prompt}</p>
       )}
       <div className="text-lg leading-relaxed p-4 bg-gray-50 rounded">
         {parts.map((part: string, index: number) => {
-          if (exercise.content.blanks[part]) {
-            const answers = exercise.content.blanks[part];
+          if (content.blanks[part]) {
+            const answers = content.blanks[part];
             return (
               <span key={index} className="inline-block mx-1 px-2 py-1 bg-green-100 border border-green-300 rounded text-green-800 font-medium">
                 {answers[0]} {answers.length > 1 && `(+${answers.length - 1})`}
@@ -147,25 +147,6 @@ function FillBlankPreview({ exercise }: { exercise: any; }) {
           return <span key={index}>{part}</span>;
         })}
       </div>
-    </div>
-  );
-}
-
-function ImportWordPreview({ exercise }: { exercise: any; }) {
-  return (
-    <div className="space-y-4">
-      <p className="text-lg font-medium">{translations.exercisesImportedFromWord}</p>
-      {exercise.content.parsedExercises?.map((subExercise: any, index: number) => (
-        <Card key={index} className="border-l-4 border-l-blue-500">
-          <CardHeader>
-            <CardTitle className="text-base">{translations.exercise} {index + 1}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {subExercise.type === "multiple_choice" && <MultipleChoicePreview exercise={subExercise} />}
-            {subExercise.type === "fill_blank" && <FillBlankPreview exercise={subExercise} />}
-          </CardContent>
-        </Card>
-      ))}
     </div>
   );
 }

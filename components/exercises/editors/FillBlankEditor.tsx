@@ -2,10 +2,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
+import { FillBlankContent } from "@/lib/types";
 
 interface FillBlankEditorProps {
-  content: any;
-  setContent: (content: any) => void;
+  content: FillBlankContent;
+  setContent: (content: FillBlankContent) => void;
 }
 
 export function FillBlankEditor({ content, setContent }: FillBlankEditorProps) {

@@ -10,13 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { useToast } from "@/hooks/use-toast";
 import { ExerciseItem } from "@/lib/exercise-schema";
+import { ExerciseWithRelations } from "@/lib/types";
 import { translations } from "@/lib/translations";
 import { Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface Props {
-  exercise: any;
+  exercise: ExerciseWithRelations;
   teacherId: string;
 }
 
@@ -26,7 +27,7 @@ export default function EditExerciseClient({ exercise }: Props) {
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">(exercise.difficulty || "easy");
   const [level, setLevel] = useState(exercise.level || "");
   const [isGeneral, setIsGeneral] = useState(exercise.isGeneral ?? true);
-  const [exercises, setExercises] = useState<ExerciseItem[]>(exercise.exercises || []);
+  const [exercises, setExercises] = useState<ExerciseItem[]>((exercise.exercises as unknown as ExerciseItem[]) || []);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -94,39 +95,36 @@ export default function EditExerciseClient({ exercise }: Props) {
       });
       router.push("/dashboard/teacher");
       router.refresh();
-    } catch (error: any) {
+    } catch (error) {
       let errorMessage = "Erro interno do servidor";
 
-      // Verificar se é ZodError (pode vir como string JSON)
-      if (error.name === "ZodError" || (typeof error.message === "string" && error.message.includes("ZodError"))) {
-        let zodErrors = [];
+      if (error instanceof Error) {
+        if (error.name === "ZodError" || error.message.includes("ZodError")) {
+          let zodErrors: Array<{ path?: string[]; code?: string; message?: string; }> = [];
 
-        try {
-          // Se o erro vier como string JSON, fazer parse
-          if (typeof error.message === "string" && error.message.startsWith("{")) {
-            const parsed = JSON.parse(error.message);
-            zodErrors = parsed.errors || [];
-          } else {
-            zodErrors = error.errors || [];
+          try {
+            if (error.message.startsWith("{")) {
+              const parsed = JSON.parse(error.message);
+              zodErrors = parsed.errors || [];
+            }
+          } catch {
+            zodErrors = [];
           }
-        } catch {
-          zodErrors = [];
-        }
 
-        // Verificar se é erro de opções insuficientes
-        const optionsError = zodErrors.find((err: any) =>
-          err.path?.includes("options") && err.code === "too_small"
-        );
+          const optionsError = zodErrors.find(err =>
+            err.path?.includes("options") && err.code === "too_small"
+          );
 
-        if (optionsError) {
-          errorMessage = "Exercícios de múltipla escolha precisam ter pelo menos 2 opções. Verifique se não há exercícios de lacuna marcados como múltipla escolha.";
-        } else if (zodErrors.length > 0) {
-          errorMessage = zodErrors[0]?.message || "Dados inválidos";
+          if (optionsError) {
+            errorMessage = "Exercícios de múltipla escolha precisam ter pelo menos 2 opções. Verifique se não há exercícios de lacuna marcados como múltipla escolha.";
+          } else if (zodErrors.length > 0) {
+            errorMessage = zodErrors[0]?.message || "Dados inválidos";
+          } else {
+            errorMessage = "Dados inválidos";
+          }
         } else {
-          errorMessage = "Dados inválidos";
+          errorMessage = error.message || "Erro interno do servidor";
         }
-      } else {
-        errorMessage = error.message || "Erro interno do servidor";
       }
 
       toast({

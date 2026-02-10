@@ -7,8 +7,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { ExerciseWithRelations } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ColDef } from "ag-grid-community";
+import { ColDef, ICellRendererParams } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { BookCheck, Edit, Eye, MoreVertical, PlusCircle, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -22,7 +23,7 @@ export function ExerciseList({ teacherId }: ExerciseListProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [exerciseToDelete, setExerciseToDelete] = useState<any>(null);
+  const [exerciseToDelete, setExerciseToDelete] = useState<ExerciseWithRelations | null>(null);
 
   const { data: exercises, isLoading } = useQuery({
     queryKey: ["exercises-list", teacherId],
@@ -71,7 +72,7 @@ export function ExerciseList({ teacherId }: ExerciseListProps) {
     },
   });
 
-  const handleDeleteClick = (exercise: any) => {
+  const handleDeleteClick = (exercise: ExerciseWithRelations) => {
     setExerciseToDelete(exercise);
     setDeleteDialogOpen(true);
   };
@@ -82,42 +83,46 @@ export function ExerciseList({ teacherId }: ExerciseListProps) {
     }
   };
 
-  const ActionsCell = ({ data }: any) => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm">
-          <MoreVertical className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem asChild>
-          <Link href={`/dashboard/teacher/exercises/${data.id}/preview`} className="flex items-center gap-2 cursor-pointer">
-            <Eye className="h-4 w-4" />
-            Visualizar
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href={`/dashboard/teacher/exercises/${data.id}`} className="flex items-center gap-2 cursor-pointer">
-            <Edit className="h-4 w-4" />
-            Editar
-          </Link>
-        </DropdownMenuItem>
-        {!data.isPublished && (
-          <DropdownMenuItem onClick={() => publishMutation.mutate(data.id)} className="flex items-center gap-2 cursor-pointer">
-            <BookCheck className="h-4 w-4" />
-            Publicar
+  const ActionsCell = ({ data }: ICellRendererParams<ExerciseWithRelations>) => {
+    if (!data) return null;
+    
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm">
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem asChild>
+            <Link href={`/dashboard/teacher/exercises/${data.id}/preview`} className="flex items-center gap-2 cursor-pointer">
+              <Eye className="h-4 w-4" />
+              Visualizar
+            </Link>
           </DropdownMenuItem>
-        )}
-        <DropdownMenuItem
-          onClick={() => handleDeleteClick(data)}
-          className="flex items-center gap-2 text-red-600 cursor-pointer"
-        >
-          <Trash2 className="h-4 w-4" />
-          Excluir
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
+          <DropdownMenuItem asChild>
+            <Link href={`/dashboard/teacher/exercises/${data.id}`} className="flex items-center gap-2 cursor-pointer">
+              <Edit className="h-4 w-4" />
+              Editar
+            </Link>
+          </DropdownMenuItem>
+          {!data.isPublished && (
+            <DropdownMenuItem onClick={() => publishMutation.mutate(data.id)} className="flex items-center gap-2 cursor-pointer">
+              <BookCheck className="h-4 w-4" />
+              Publicar
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem
+            onClick={() => handleDeleteClick(data)}
+            className="flex items-center gap-2 text-red-600 cursor-pointer"
+          >
+            <Trash2 className="h-4 w-4" />
+            Excluir
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
 
   const columnDefs: ColDef[] = [
     { field: "title", headerName: "Nome", flex: 1, filter: true },
@@ -127,7 +132,7 @@ export function ExerciseList({ teacherId }: ExerciseListProps) {
       headerName: "Público Alvo",
       flex: 1,
       filter: true,
-      valueGetter: (params: any) => params.data.isGeneral ? "Particular" : "Bela Lira"
+      valueGetter: (params) => params.data?.isGeneral ? "Particular" : "Bela Lira"
     },
     {
       field: "difficulty",
@@ -143,7 +148,7 @@ export function ExerciseList({ teacherId }: ExerciseListProps) {
         }
       }
     },
-    { field: "isPublished", headerName: "Publicado", flex: 1, filter: true, cellRenderer: (params: any) => params.value ? "Sim" : "Não" },
+    { field: "isPublished", headerName: "Publicado", flex: 1, filter: true, cellRenderer: (params: ICellRendererParams<ExerciseWithRelations>) => params.value ? "Sim" : "Não" },
     {
       headerName: "Actions",
       width: 80,
