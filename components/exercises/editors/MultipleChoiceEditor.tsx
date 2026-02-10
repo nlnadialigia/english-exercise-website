@@ -3,14 +3,15 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { MultipleChoiceContent, MultipleChoiceOption } from "@/lib/types";
 
 interface MultipleChoiceEditorProps {
-  content: any;
-  setContent: (content: any) => void;
+  content: MultipleChoiceContent;
+  setContent: (content: MultipleChoiceContent) => void;
 }
 
 export function MultipleChoiceEditor({ content, setContent }: MultipleChoiceEditorProps) {
-  const [options, setOptions] = useState(content.options || [
+  const [options, setOptions] = useState<MultipleChoiceOption[]>(content.options || [
     { id: crypto.randomUUID(), text: "", correct: false },
     { id: crypto.randomUUID(), text: "", correct: false }
   ]);
@@ -29,19 +30,16 @@ export function MultipleChoiceEditor({ content, setContent }: MultipleChoiceEdit
 
   const removeOption = (id: string) => {
     if (options.length > 2) {
-      setOptions(options.filter((opt: any) => opt.id !== id));
+      setOptions(options.filter(opt => opt.id !== id));
     }
   };
 
-  const updateOption = (id: string, field: string, value: any) => {
-    const newOptions = options.map((opt: any) => {
+  const updateOption = (id: string, field: keyof MultipleChoiceOption, value: string | boolean) => {
+    const newOptions = options.map(opt => {
       if (opt.id === id) {
-        if (field === "correct" && value) {
-          return { ...opt, [field]: value };
-        }
         return { ...opt, [field]: value };
       }
-      if (field === "correct" && value) {
+      if (field === "correct" && value === true) {
         return { ...opt, correct: false };
       }
       return opt;
@@ -51,7 +49,7 @@ export function MultipleChoiceEditor({ content, setContent }: MultipleChoiceEdit
 
   return (
     <div className="space-y-4">
-      {options.map((option: any, index: number) => (
+      {options.map((option, index) => (
         <div key={option.id} className="flex gap-2 items-center">
           <Input
             value={option.text}

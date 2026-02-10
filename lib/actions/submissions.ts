@@ -17,7 +17,7 @@ export async function createSubmission(submissionData: ISubmission) {
     revalidatePath("/dashboard/student");
 
     return { success: true, submissionId };
-  } catch (error: any) {
+  } catch (error) {
     return { error: "Erro ao enviar exercício" };
   }
 }

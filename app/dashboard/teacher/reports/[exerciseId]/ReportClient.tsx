@@ -9,13 +9,33 @@ import { CheckCircle, ChevronDown, ChevronUp, FileDown, User, XCircle } from "lu
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { CorrectionResult, ExerciseItem } from "@/lib/types";
+
 interface Question {
   id: string;
   question: string;
   correctAnswer: string;
 }
 
-export function ReportClient({ submission, exercise }: { submission: any; exercise: any; }) {
+interface SubmissionData {
+  profiles?: {
+    full_name?: string;
+    email?: string;
+  };
+  score: number;
+  total_questions: number;
+  answers: Record<string, string>;
+  created_at: string;
+}
+
+interface ExerciseData {
+  title: string;
+  content: {
+    questions: Question[];
+  };
+}
+
+export function ReportClient({ submission, exercise }: { submission: SubmissionData; exercise: ExerciseData; }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 

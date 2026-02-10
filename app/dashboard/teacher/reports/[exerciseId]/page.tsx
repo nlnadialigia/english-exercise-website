@@ -99,7 +99,7 @@ export default async function ExerciseReportPage({
 
           <div className="grid gap-4">
             {submissions.length > 0 ? (
-              submissions.map((submission: any) => (
+              submissions.map((submission) => (
                 <ReportClient
                   key={submission.id}
                   submission={submission}

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { ExerciseItem, ExerciseType } from "@/lib/exercise-schema";
+import { MultipleChoiceContent, FillBlankContent } from "@/lib/types";
 import { Loader2Icon, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { FillBlankEditor } from "./editors/FillBlankEditor";
@@ -55,7 +56,7 @@ export function ExerciseBookEditor({ exercises, setExercises }: ExerciseBookEdit
     setExercises(newExercises);
   };
 
-  const handleImportWord = (parsedExercises: any[]) => {
+  const handleImportWord = (parsedExercises: ExerciseItem[]) => {
     const newExercises = parsedExercises.map(ex => ({
       id: crypto.randomUUID(),
       type: ex.type,
@@ -64,12 +65,10 @@ export function ExerciseBookEditor({ exercises, setExercises }: ExerciseBookEdit
     }));
 
     if (isAddingMore) {
-      // Adicionar aos exercícios existentes
       setExercises([...exercises, ...newExercises]);
-      setSelectedExercise(exercises.length); // Selecionar o primeiro novo exercício
+      setSelectedExercise(exercises.length);
       setIsAddingMore(false);
     } else {
-      // Substituir todos os exercícios
       setExercises(newExercises);
       setSelectedExercise(0);
     }
@@ -92,13 +91,13 @@ export function ExerciseBookEditor({ exercises, setExercises }: ExerciseBookEdit
       case "multiple_choice":
         return <MultipleChoiceEditor
           key={key}
-          content={exercise.content}
+          content={exercise.content as MultipleChoiceContent}
           setContent={(content) => updateExercise(index, 'content', content)}
         />;
       case "fill_blank":
         return <FillBlankEditor
           key={key}
-          content={exercise.content}
+          content={exercise.content as FillBlankContent}
           setContent={(content) => updateExercise(index, 'content', content)}
         />;
       default:
@@ -142,14 +141,9 @@ export function ExerciseBookEditor({ exercises, setExercises }: ExerciseBookEdit
 
       {showImportMode ? (
         <Card>
-          {/* <CardHeader>
-            <CardTitle>
-              {isAddingMore ? "Adicionar Mais Exercícios" : ""}
-            </CardTitle>
-          </CardHeader> */}
           <CardContent>
             <ImportWordEditor
-              content={{}}
+              content={{ rawText: "", parsedExercises: [] }}
               setContent={(content) => {
                 if (content.parsedExercises?.length) {
                   handleImportWord(content.parsedExercises);

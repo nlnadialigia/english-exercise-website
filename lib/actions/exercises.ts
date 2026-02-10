@@ -6,8 +6,10 @@ import { redirect } from "next/navigation";
 import prisma from "../db/prisma";
 import logger from "../logger";
 import { ExerciseService, ISubmitExercise } from "../services/exercise-service";
+import { CreateExerciseInput, ExerciseWithRelations } from "../types";
+import { Submission } from "@prisma/client";
 
-export async function createExercise(exerciseData: any) {
+export async function createExercise(exerciseData: Omit<CreateExerciseInput, "teacherId">) {
   const user = await getSession();
 
   if (!user || user.role !== "teacher") {
@@ -22,7 +24,7 @@ export async function createExercise(exerciseData: any) {
 
     revalidatePath("/dashboard/teacher");
     return { success: true, exerciseId };
-  } catch (error: any) {
+  } catch (error) {
     logger.error("Error creating exercise:", "DATABASE", error);
     return { success: false, error: "Erro interno do servidor. Tente novamente." };
   }
@@ -142,7 +144,7 @@ export async function getCompletedExercisesForStudent() {
       acc[sub.exerciseId] = sub;
     }
     return acc;
-  }, {} as Record<string, any>);
+  }, {} as Record<string, Submission>);
 
   const submittedIds = Object.keys(bestSubmissions);
 
@@ -156,7 +158,7 @@ export async function getCompletedExercisesForStudent() {
 
 export async function getExerciseById(id: string) {
   try {
-    return await ExerciseService.getExerciseById(id) as any;
+    return await ExerciseService.getExerciseById(id);
   } catch (error) {
     logger.error("Error fetching exercise:", "DATABASE", error);
     return null;
@@ -167,10 +169,10 @@ export async function getExerciseSubmissions(exerciseId: string) {
   try {
     const result = await ExerciseService.getExerciseSubmissions(exerciseId);
 
-    return result.map((submission: any) => {
+    return result.map((submission) => {
       return {
         ...submission,
-        answers: JSON.parse(submission.answers),
+        answers: JSON.parse(submission.answers as string),
       };
     });
   } catch (error) {
@@ -183,10 +185,10 @@ export async function getSubmissionsByStudent(studentId: string) {
   try {
     const result = await ExerciseService.getSubmissionsByStudent(studentId);
 
-    return result.map((submission: any) => {
+    return result.map((submission) => {
       return {
         ...submission,
-        answers: JSON.parse(submission.answers),
+        answers: JSON.parse(submission.answers as string),
       };
     });
   } catch (error) {
@@ -210,7 +212,7 @@ export async function submitExercise(data: ISubmitExercise) {
 
     revalidatePath("/dashboard/student");
     return { success: true, submissionId };
-  } catch (error: any) {
+  } catch (error) {
     logger.error("Error submitting exercise:", "DATABASE", error);
     return { error: "Erro ao submeter exercício" };
   }

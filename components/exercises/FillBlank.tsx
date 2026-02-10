@@ -1,9 +1,9 @@
 import { Input } from "@/components/ui/input";
-import { Exercise } from "@/lib/exercise-schema";
+import { ExerciseItem, FillBlankContent } from "@/lib/types";
 import { useState } from "react";
 
 interface FillBlankProps {
-  exercise: Exercise;
+  exercise: ExerciseItem;
   onAnswer: (answer: Record<string, string>) => void;
 }
 
@@ -12,25 +12,24 @@ export function FillBlank({ exercise, onAnswer }: FillBlankProps) {
 
   if (exercise.type !== "fill_blank") return null;
 
-  const parts = exercise.content.text.split(/{{(.*?)}}/g);
-  const blankKeys = Object.keys(exercise.content.blanks);
+  const content = exercise.content as FillBlankContent;
+  const parts = content.text.split(/{{(.*?)}}/g);
+  const blankKeys = Object.keys(content.blanks);
 
   const handleInputChange = (key: string, value: string) => {
     const newAnswers = { ...answers, [key]: value };
     setAnswers(newAnswers);
-    // Enviar respostas automaticamente
     onAnswer(newAnswers);
   };
 
   return (
     <div className="space-y-4">
-      {exercise.prompt && exercise.prompt !== exercise.content.text && (
+      {exercise.prompt && exercise.prompt !== content.text && (
         <p className="text-lg font-medium">{exercise.prompt}</p>
       )}
 
       <div className="text-lg leading-relaxed">
-        {parts.map((part, index) => {
-          // Se a parte é uma chave de lacuna, renderizar input
+        {parts.map((part: string, index: number) => {
           if (blankKeys.includes(part)) {
             return (
               <Input
@@ -42,7 +41,6 @@ export function FillBlank({ exercise, onAnswer }: FillBlankProps) {
               />
             );
           }
-          // Caso contrário, renderizar o texto normal
           return <span key={index}>{part}</span>;
         })}
       </div>

@@ -147,7 +147,7 @@ export default function StudentExercisesPage({ params }: Props) {
               </div>
             ) : (
               <div className="space-y-4">
-                {exerciseData?.assigned?.map((assignment: any) => (
+                {exerciseData?.assigned?.map((assignment) => (
                   <div key={assignment.id} className="border rounded-lg p-4 space-y-3">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -202,7 +202,7 @@ export default function StudentExercisesPage({ params }: Props) {
               </div>
             ) : (
               <div className="space-y-4">
-                {exerciseData?.available?.map((exercise: any) => (
+                {exerciseData?.available?.map((exercise) => (
                   <div key={exercise.id} className="border rounded-lg p-4 space-y-3">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">

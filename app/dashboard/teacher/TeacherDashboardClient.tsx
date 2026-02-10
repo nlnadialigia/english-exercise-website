@@ -17,15 +17,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { ExerciseDifficulty } from '@prisma/client';
+import { ExerciseWithRelations, SubmissionDetails, StudentFormData, UserWithRelations } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ColDef } from "ag-grid-community";
+import { ColDef, ICellRendererParams } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { CheckCircle, Copy, Eye, FileText, Link2, MoreVertical, Pencil, PlusCircle, Settings, Trash2, Users } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
 interface Props {
-  exercises: any[];
+  exercises: ExerciseWithRelations[];
   totalSubmissions: number;
   publishedCount: number;
   isAdmin?: boolean;
@@ -37,15 +38,14 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [exerciseToDelete, setExerciseToDelete] = useState<string | null>(null);
 
-  // Estados para visualização de submissão
   const [submissionViewOpen, setSubmissionViewOpen] = useState(false);
-  const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<SubmissionDetails | null>(null);
   const [addStudentDialogOpen, setAddStudentDialogOpen] = useState(false);
   const [editStudentDialogOpen, setEditStudentDialogOpen] = useState(false);
   const [deleteStudentDialogOpen, setDeleteStudentDialogOpen] = useState(false);
-  const [studentToEdit, setStudentToEdit] = useState<any>(null);
+  const [studentToEdit, setStudentToEdit] = useState<UserWithRelations | null>(null);
   const [studentToDelete, setStudentToDelete] = useState<string | null>(null);
-  const [newStudent, setNewStudent] = useState({
+  const [newStudent, setNewStudent] = useState<StudentFormData>({
     fullName: "",
     email: "",
     level: "",
@@ -99,9 +99,9 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
       headerName: "Difficulty",
       flex: 1,
       filter: true,
-      cellRenderer: (params: { value: ExerciseDifficulty; }) => {
+      cellRenderer: (params: ICellRendererParams<ExerciseWithRelations>) => {
         const difficultyMap = { easy: "Easy", medium: "Medium", hard: "Hard" };
-        return difficultyMap[params.value] || params.value;
+        return difficultyMap[params.value as ExerciseDifficulty] || params.value;
       }
     },
     { field: "level", headerName: "Level", flex: 1, filter: true },
@@ -110,19 +110,19 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
       headerName: "Target Audience",
       flex: 1,
       filter: true,
-      cellRenderer: (params: any) => params.value ? "Private" : "Bela Lira"
+      cellRenderer: (params: ICellRendererParams<ExerciseWithRelations>) => params.value ? "Private" : "Bela Lira"
     },
     {
       field: "isPublished",
       headerName: "Status",
       flex: 1,
       filter: true,
-      cellRenderer: (params: any) => params.value ? "Published" : "Draft"
+      cellRenderer: (params: ICellRendererParams<ExerciseWithRelations>) => params.value ? "Published" : "Draft"
     },
     {
       headerName: "Actions",
       flex: 1,
-      cellRenderer: (params: any) => (
+      cellRenderer: (params: ICellRendererParams<ExerciseWithRelations>) => (
         <div className="flex items-center justify-center h-full">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -132,27 +132,27 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href={`/dashboard/teacher/exercises/${params.data.id}/preview`} className="flex items-center">
+                <Link href={`/dashboard/teacher/exercises/${params.data?.id}/preview`} className="flex items-center">
                   <Eye className="mr-2 h-4 w-4" />
                   View
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href={`/dashboard/teacher/exercises/${params.data.id}`} className="flex items-center">
+                <Link href={`/dashboard/teacher/exercises/${params.data?.id}`} className="flex items-center">
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="flex items-center"
-                onClick={() => publishMutation.mutate(params.data.id)}
+                onClick={() => params.data && publishMutation.mutate(params.data.id)}
               >
                 <CheckCircle className="mr-2 h-4 w-4" />
-                {params.data.isPublished ? "Unpublish" : "Publish"}
+                {params.data?.isPublished ? "Unpublish" : "Publish"}
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="flex items-center"
-                onClick={() => duplicateMutation.mutate(params.data.id)}
+                onClick={() => params.data && duplicateMutation.mutate(params.data.id)}
               >
                 <Copy className="mr-2 h-4 w-4" />
                 Duplicate
@@ -160,8 +160,10 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
               <DropdownMenuItem
                 className="flex items-center text-red-600"
                 onClick={() => {
-                  setExerciseToDelete(params.data.id);
-                  setDeleteDialogOpen(true);
+                  if (params.data) {
+                    setExerciseToDelete(params.data.id);
+                    setDeleteDialogOpen(true);
+                  }
                 }}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -182,7 +184,7 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
       field: "score",
       headerName: "Score",
       width: 120,
-      cellRenderer: (params: any) => `${params.value}/${params.data.totalQuestions}`,
+      cellRenderer: (params: ICellRendererParams) => `${params.value}/${params.data.totalQuestions}`,
       cellStyle: { textAlign: 'center' },
       filter: false
     },
@@ -190,7 +192,7 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
       field: "percentage",
       headerName: "Percentage",
       width: 120,
-      cellRenderer: (params: any) => {
+      cellRenderer: (params: ICellRendererParams) => {
         const percentage = Math.round((params.data.score / params.data.totalQuestions) * 100);
         const passed = percentage >= 70;
         return (
@@ -207,13 +209,13 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
       field: "createdAt",
       headerName: "Data",
       width: 150,
-      cellRenderer: (params: any) => new Date(params.value).toLocaleDateString('pt-BR'),
+      cellRenderer: (params: ICellRendererParams) => new Date(params.value as string).toLocaleDateString('pt-BR'),
       cellStyle: { textAlign: 'center' }
     },
     {
       headerName: "Actions",
       width: 100,
-      cellRenderer: (params: any) => (
+      cellRenderer: (params: ICellRendererParams) => (
         <div className="flex items-center justify-center h-full">
           <Button
             variant="ghost"
@@ -241,13 +243,13 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
       headerName: "Target Audience",
       flex: 1,
       filter: true,
-      cellRenderer: (params: any) => params.value ? "Private" : "Bela Lira"
+      cellRenderer: (params: ICellRendererParams<UserWithRelations>) => params.value ? "Private" : "Bela Lira"
     },
     {
       field: "openExercises",
       headerName: "Open",
       width: 120,
-      cellRenderer: (params: any) => (
+      cellRenderer: (params: ICellRendererParams) => (
         <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-800 text-xs font-medium">
           {params.value}
         </span>
@@ -258,7 +260,7 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
       field: "completedExercises",
       headerName: "Completed",
       width: 120,
-      cellRenderer: (params: any) => (
+      cellRenderer: (params: ICellRendererParams) => (
         <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-800 text-xs font-medium">
           {params.value}
         </span>
@@ -268,7 +270,7 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
     {
       headerName: "Actions",
       width: 150,
-      cellRenderer: (params: any) => (
+      cellRenderer: (params: ICellRendererParams<UserWithRelations>) => (
         <div className="flex items-center justify-center h-full">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -278,13 +280,13 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href={`/dashboard/teacher/students/${params.data.id}`} className="flex items-center">
+                <Link href={`/dashboard/teacher/students/${params.data?.id}`} className="flex items-center">
                   <Eye className="mr-2 h-4 w-4" />
                   View Details
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href={`/dashboard/teacher/students/${params.data.id}/exercises`} className="flex items-center">
+                <Link href={`/dashboard/teacher/students/${params.data?.id}/exercises`} className="flex items-center">
                   <Settings className="mr-2 h-4 w-4" />
                   Manage Exercises
                 </Link>
@@ -292,8 +294,10 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
               <DropdownMenuItem
                 className="flex items-center"
                 onClick={() => {
-                  setStudentToEdit(params.data);
-                  setEditStudentDialogOpen(true);
+                  if (params.data) {
+                    setStudentToEdit(params.data);
+                    setEditStudentDialogOpen(true);
+                  }
                 }}
               >
                 <Pencil className="mr-2 h-4 w-4" />
@@ -301,7 +305,7 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="flex items-center"
-                onClick={() => generateMagicLink(params.data.id)}
+                onClick={() => params.data && generateMagicLink(params.data.id)}
               >
                 <Link2 className="mr-2 h-4 w-4" />
                 Generate Access Link
@@ -309,8 +313,10 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
               <DropdownMenuItem
                 className="flex items-center text-red-600"
                 onClick={() => {
-                  setStudentToDelete(params.data.id);
-                  setDeleteStudentDialogOpen(true);
+                  if (params.data) {
+                    setStudentToDelete(params.data.id);
+                    setDeleteStudentDialogOpen(true);
+                  }
                 }}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -406,7 +412,7 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
 
   // Mutations para alunos
   const addStudentMutation = useMutation({
-    mutationFn: async (studentData: any) => {
+    mutationFn: async (studentData: StudentFormData) => {
       const response = await fetch("/api/teacher/students", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -433,7 +439,7 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
   });
 
   const editStudentMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any; }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Partial<StudentFormData>; }) => {
       const response = await fetch(`/api/teacher/students/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -500,7 +506,6 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
 
       const { magicLink } = await response.json();
 
-      // Copiar para clipboard
       await navigator.clipboard.writeText(magicLink);
 
       toast({
@@ -508,10 +513,11 @@ export default function TeacherDashboardClient({ exercises: initialExercises, to
         description: "The access link has been copied to clipboard.",
         className: "bg-green-50 border-green-200 text-green-800"
       });
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to generate link";
       toast({
         title: "Error generating link",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive"
       });
     }

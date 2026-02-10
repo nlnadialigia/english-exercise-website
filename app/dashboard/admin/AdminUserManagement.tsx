@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { UserWithRelations } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ColDef } from "ag-grid-community";
+import { ColDef, ICellRendererParams } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { Eye, Loader2, Trash2, UserPlus } from "lucide-react";
 import { useState } from "react";
@@ -30,7 +31,7 @@ export function AdminUserManagement() {
 
   const [isAdding, setIsAdding] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<any>(null);
+  const [userToDelete, setUserToDelete] = useState<UserWithRelations | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -91,24 +92,24 @@ export function AdminUserManagement() {
       field: "isGeneral",
       headerName: "Tipo",
       flex: 1,
-      cellRenderer: (params: any) => {
-        if (params.data.role === "student") {
+      cellRenderer: (params: ICellRendererParams<UserWithRelations>) => {
+        if (params.data?.role === "student") {
           return params.value ? "Particular" : "Bela Lira";
         }
         return "N/A";
       }
     },
-    { field: "createdAt", headerName: "Criado em", flex: 1, valueFormatter: (params) => new Date(params.value).toLocaleDateString() },
+    { field: "createdAt", headerName: "Criado em", flex: 1, valueFormatter: (params) => new Date(params.value as string).toLocaleDateString() },
     {
       headerName: "Ações",
-      cellRenderer: (params: any) => (
+      cellRenderer: (params: ICellRendererParams<UserWithRelations>) => (
         <div className="flex gap-2">
-          {params.data.role !== "admin" && (
+          {params.data?.role !== "admin" && (
             <>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => window.open(`/dashboard/${params.data.role}`, '_blank')}
+                onClick={() => window.open(`/dashboard/${params.data?.role}`, '_blank')}
               >
                 <Eye className="h-4 w-4" />
               </Button>
@@ -116,7 +117,7 @@ export function AdminUserManagement() {
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  setUserToDelete(params.data);
+                  setUserToDelete(params.data!);
                   setDeleteDialogOpen(true);
                 }}
                 className="text-red-600 hover:text-red-700"
@@ -150,7 +151,7 @@ export function AdminUserManagement() {
       setUserToDelete(null);
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || "Erro ao excluir usuário");
     },
   });
@@ -184,7 +185,7 @@ export function AdminUserManagement() {
       setIsAdding(false);
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message);
     },
   });

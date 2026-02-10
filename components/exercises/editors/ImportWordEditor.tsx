@@ -6,16 +6,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Upload } from "lucide-react";
 import { useEffect, useState } from "react";
+import { ImportWordContent, ExerciseItem, ExerciseType, MultipleChoiceContent, FillBlankContent, MultipleChoiceOption } from "@/lib/types";
 
 interface ImportWordEditorProps {
-  content: any;
-  setContent: (content: any) => void;
+  content: ImportWordContent;
+  setContent: (content: ImportWordContent) => void;
+}
+
+interface ParsedExercise {
+  type: ExerciseType;
+  prompt: string;
+  content: MultipleChoiceContent | FillBlankContent;
+  options?: MultipleChoiceOption[];
 }
 
 export function ImportWordEditor({ content, setContent }: ImportWordEditorProps) {
   const [rawText, setRawText] = useState(content.rawText || "");
-  const [exerciseType, setExerciseType] = useState<"multiple_choice" | "fill_blank">("multiple_choice");
-  const [parsedExercises, setParsedExercises] = useState<any[]>(content.parsedExercises || []);
+  const [exerciseType, setExerciseType] = useState<ExerciseType>("multiple_choice");
+  const [parsedExercises, setParsedExercises] = useState<ExerciseItem[]>(content.parsedExercises || []);
 
   useEffect(() => {
     setContent({
@@ -26,40 +34,43 @@ export function ImportWordEditor({ content, setContent }: ImportWordEditorProps)
 
   const parseMultipleChoice = (text: string) => {
     const lines = text.split('\n').filter(line => line.trim());
-    const exercises = [];
-    let currentExercise: any = null;
+    const exercises: ParsedExercise[] = [];
+    let currentExercise: ParsedExercise | null = null;
 
     for (const line of lines) {
       const trimmed = line.trim();
 
-      // Detectar pergunta numerada (1., 2., 3., etc.) ou linha que termina com ?
       if (trimmed.match(/^\d+\./) || (trimmed.endsWith('?') && !trimmed.match(/^[a-d]\)/i))) {
         if (currentExercise) exercises.push(currentExercise);
 
-        // Remover numeração se existir
         const questionText = trimmed.replace(/^\d+\.\s*/, '');
 
         currentExercise = {
-          type: "multiple_choice",
+          type: "multiple_choice" as const,
           prompt: questionText,
           content: {
             options: [],
             allowMultiple: false,
             explanation: ""
-          }
+          },
+          options: []
         };
       }
-      // Detectar opções (a), b), c), d))
       else if (trimmed.match(/^[a-d]\)/i) && currentExercise) {
         const optionText = trimmed.substring(2).trim();
         const isCorrect = optionText.includes('*') || optionText.includes('(correta)');
         const cleanText = optionText.replace(/\*|\(correta\)/gi, '').trim();
 
-        currentExercise.content.options.push({
+        const option: MultipleChoiceOption = {
           id: crypto.randomUUID(),
           text: cleanText,
           correct: isCorrect
-        });
+        };
+
+        if (currentExercise.options) {
+          currentExercise.options.push(option);
+        }
+        (currentExercise.content as MultipleChoiceContent).options.push(option);
       }
     }
 
@@ -113,7 +124,7 @@ export function ImportWordEditor({ content, setContent }: ImportWordEditorProps)
       });
 
       return {
-        type: "fill_blank",
+        type: "fill_blank" as const,
         prompt: processedText,
         content: {
           text: processedText,
@@ -127,13 +138,13 @@ export function ImportWordEditor({ content, setContent }: ImportWordEditorProps)
   const handleParse = () => {
     if (!rawText.trim()) return;
 
-    let parsed = [];
+    let parsed: ExerciseItem[] = [];
     switch (exerciseType) {
       case "multiple_choice":
-        parsed = parseMultipleChoice(rawText);
+        parsed = parseMultipleChoice(rawText) as ExerciseItem[];
         break;
       case "fill_blank":
-        parsed = parseFillBlank(rawText);
+        parsed = parseFillBlank(rawText) as ExerciseItem[];
         break;
     }
 
@@ -149,7 +160,7 @@ export function ImportWordEditor({ content, setContent }: ImportWordEditorProps)
       <div className="space-y-4">
         <div className="flex gap-2 items-center pb-2">
           <Label>Exercise Type: </Label>
-          <Select value={exerciseType} onValueChange={(value: any) => setExerciseType(value)}>
+          <Select value={exerciseType} onValueChange={(value) => setExerciseType(value as ExerciseType)}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -202,7 +213,7 @@ export function ImportWordEditor({ content, setContent }: ImportWordEditorProps)
                   <p className="font-medium">{exercise.prompt}</p>
                   {exercise.type === "multiple_choice" && (
                     <div className="space-y-1">
-                      {exercise.content.options.map((option: any, optIndex: number) => (
+                      {(exercise.content as MultipleChoiceContent).options.map((option, optIndex) => (
                         <div key={optIndex} className={`text-sm ${option.correct ? 'text-green-600 font-medium' : ''}`}>
                           {String.fromCharCode(97 + optIndex)}) {option.text} {option.correct && '✓'}
                         </div>
@@ -211,7 +222,7 @@ export function ImportWordEditor({ content, setContent }: ImportWordEditorProps)
                   )}
                   {exercise.type === "fill_blank" && (
                     <div className="text-sm text-gray-600">
-                      {exercise.content.text}
+                      {(exercise.content as FillBlankContent).text}
                     </div>
                   )}
                 </div>

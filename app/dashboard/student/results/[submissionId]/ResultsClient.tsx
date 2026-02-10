@@ -4,6 +4,7 @@ import { DetailedCorrection } from "@/components/exercises/DetailedCorrection";
 import { ExerciseBackButton } from "@/components/exercises/ExerciseBackButton";
 import { ScoringExplanation } from "@/components/exercises/ScoringExplanation";
 import { translations } from "@/lib/translations";
+import { CorrectionResult, ExerciseItem } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -13,12 +14,12 @@ interface Submission {
   score: number;
   totalQuestions: number;
   attempt: number;
-  corrections: any[];
+  corrections: CorrectionResult[];
   exercise: {
     id: string;
     title: string;
     description: string;
-    exercises: any[];
+    exercises: ExerciseItem[];
   };
   createdAt: string;
 }

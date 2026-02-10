@@ -6,6 +6,7 @@ import SubmissionPDF from "@/components/pdf/SubmissionPDF";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { translations } from "@/lib/translations";
+import { CorrectionResult, ExerciseItem } from "@/lib/types";
 import { pdf } from '@react-pdf/renderer';
 import { Download, User } from "lucide-react";
 import { useState } from "react";
@@ -19,7 +20,7 @@ interface SubmissionViewDialogProps {
     score: number;
     totalQuestions: number;
     attempt: number;
-    corrections: any[];
+    corrections: CorrectionResult[];
     createdAt: string;
     student: {
       id: string;
@@ -30,7 +31,7 @@ interface SubmissionViewDialogProps {
       id: string;
       title: string;
       description: string;
-      exercises: any[];
+      exercises: ExerciseItem[];
     };
   } | null;
 }

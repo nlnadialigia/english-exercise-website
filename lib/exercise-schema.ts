@@ -32,7 +32,7 @@ export const ImportWordSchema = z.object({
   parsedExercises: z.array(z.object({
     type: ExerciseTypeEnum,
     prompt: z.string(),
-    content: z.any(),
+    content: z.union([MultipleChoiceSchema, FillBlankSchema]),
   })),
 });
 

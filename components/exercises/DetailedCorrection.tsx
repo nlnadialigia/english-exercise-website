@@ -2,10 +2,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { translations } from "@/lib/translations";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { CorrectionResult, ExerciseItem, FillBlankContent, MultipleChoiceContent } from "@/lib/types";
 
 interface DetailedCorrectionProps {
-  corrections: any[];
-  exercises?: any[];
+  corrections: CorrectionResult[];
+  exercises?: ExerciseItem[];
   size?: 'default' | 'compact';
 }
 
@@ -14,7 +15,7 @@ export function DetailedCorrection({ corrections, exercises = [], size = 'defaul
 
   return (
     <div className="space-y-6">
-      {corrections.map((correction: any, index: number) => (
+      {corrections.map((correction, index) => (
         <Card key={index} className={`border-l-4 ${correction.isCorrect ? 'border-l-green-500' : 'border-l-red-500'}`}>
           <CardHeader>
             <div className="flex justify-between items-start">
@@ -30,7 +31,7 @@ export function DetailedCorrection({ corrections, exercises = [], size = 'defaul
             <p
               className={`${isCompact ? 'text-sm' : 'text-lg'} font-medium`}
               dangerouslySetInnerHTML={{
-                __html: correction.question.replace(/\{\{([^}]+)\}\}/g, (match: any, answer: string) =>
+                __html: correction.question.replace(/\{\{([^}]+)\}\}/g, (_match: string, answer: string) =>
                   `<span class="inline-block px-2 py-1 bg-green-100 border border-green-300 rounded text-green-800 font-semibold">${answer.trim()}</span>`
                 )
               }}
@@ -40,20 +41,20 @@ export function DetailedCorrection({ corrections, exercises = [], size = 'defaul
               {(() => {
                 const originalQuestion = exercises[index];
 
-                // Tratamento especial para exercícios de lacuna
                 if (originalQuestion?.type === "fill_blank") {
+                  const content = originalQuestion.content as FillBlankContent;
                   const userAnswers = typeof correction.userAnswer === 'string'
                     ? JSON.parse(correction.userAnswer || '{}')
-                    : correction.userAnswer;
+                    : correction.userAnswer as Record<string, string>;
 
                   return (
                     <div className="space-y-2">
-                      {Object.entries(userAnswers).map(([key, userValue]: [string, any]) => {
+                      {Object.entries(userAnswers).map(([key, userValue]) => {
                         const correctAnswers = typeof correction.correctAnswer === 'string'
                           ? JSON.parse(correction.correctAnswer || '{}')
                           : correction.correctAnswer;
-                        const correctOptions = correctAnswers[key] || [];
-                        const caseSensitive = originalQuestion.content.caseSensitive || false;
+                        const correctOptions = (correctAnswers as Record<string, string[]>)[key] || [];
+                        const caseSensitive = content.caseSensitive || false;
 
                         const isBlankCorrect = correctOptions.some((acceptedAnswer: string) =>
                           caseSensitive
@@ -82,7 +83,8 @@ export function DetailedCorrection({ corrections, exercises = [], size = 'defaul
                 }
 
                 if (originalQuestion?.type === "multiple_choice") {
-                  return originalQuestion.content.options.map((option: any, optIndex: number) => {
+                  const content = originalQuestion.content as MultipleChoiceContent;
+                  return content.options.map((option, optIndex) => {
                     const isUserAnswer = option.id === correction.userAnswer;
                     const isCorrect = option.correct;
 
